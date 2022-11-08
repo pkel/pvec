@@ -1,0 +1,6 @@
+(library
+ (name vector)
+ (libraries ppx_show.runtime)
+ (inline_tests)
+ (preprocess
+  (pps ppx_expect ppx_show)))
