@@ -1,6 +1,12 @@
 (library
  (name vector)
- (libraries ppx_show.runtime)
+ (modules vector)
+ (public_name vector))
+
+(library
+ (name test)
+ (modules test)
+ (libraries vector)
  (inline_tests)
  (preprocess
-  (pps ppx_expect ppx_show)))
+  (pps ppx_expect)))

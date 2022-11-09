@@ -7,8 +7,10 @@ format:
 check-format:
 	opam exec dune -- build @fmt
 
-deps: _opam
-	opam install dune ocamlformat merlin ppx_show ppx_expect --yes
+deps: _opam dune-project
+	opam exec dune -- build {vector,_dev}.opam
+	opam install . --deps-only --working-dir
 
 _opam:
 	opam switch create . --package=ocaml-base-compiler.4.14.0
+	opam install . --deps-only --working-dir
