@@ -106,13 +106,38 @@ end = struct
   ;;
 
   let peek t = if t.last = -1 then None else Some (t.tail.(t.last land mask) |> Option.get)
-  let pop_tail _ = failwith "TODO"
+
+  let pop_tail t =
+    (* last element of tail was popped; (t.last >>> bits) points to the rightmost leave of
+       the trie; we now remove this leave and set it as tail. *)
+    let rec extract shift = function
+      | Empty -> assert false
+      | Node arr ->
+        let idx = (t.last lsr shift) land mask in
+        (match extract (shift - bits) arr.(idx) with
+         | Empty, tail when idx = 0 -> Empty, tail
+         | x, tail -> Node (update_c idx x arr), tail)
+      | Leave arr -> Empty, Array.map Option.some arr
+    in
+    let trie, tail, shift =
+      match extract (t.shift - bits) t.trie with
+      | Leave _, _ -> assert false
+      | Node arr, tail when arr.(1) = Empty ->
+        (* root node becomes redundant, shrink trie *)
+        arr.(0), tail, t.shift - bits
+      | (Node _ as trie), tail ->
+        (* base case *)
+        trie, tail, t.shift
+      | Empty, tail ->
+        (* we popped the last leave from the trie *)
+        Empty, tail, 0
+    in
+    { t with trie; tail; shift }
+  ;;
 
   let pop t =
     if t.last = -1
     then None
-    else if t.last = 0
-    then Some (t.tail.(0) |> Option.get, empty ())
     else (
       let r = t.tail.(t.last land mask) |> Option.get in
       let t = { t with last = t.last - 1 } in
@@ -273,7 +298,11 @@ let%test_module "Vec32" =
     let init len =
       let vec = ref (empty ()) in
       for i = 0 to len - 1 do
-        vec := append i !vec
+        vec := append i !vec;
+        assert (peek !vec = Some i)
+      done;
+      for i = 0 to len - 1 do
+        vec := set_exn i i !vec
       done;
       !vec
     ;;
@@ -281,30 +310,37 @@ let%test_module "Vec32" =
     let mem i t = get i t = Some i
     let non_mem i t = get i t = None
 
-    let check vec prop =
+    let check vec label prop =
       match prop vec with
       | true -> ()
       | false ->
         Format.eprintf "%a\n" (pp Format.pp_print_int) vec;
-        failwith "check failed"
+        Format.ksprintf failwith "check '%s' failed" label
       | exception exn ->
-        Format.eprintf "%a\n" (pp Format.pp_print_int) vec;
+        Format.eprintf "%a\n%!" (pp Format.pp_print_int) vec;
         raise exn
     ;;
 
     let test len =
       let vec = init len in
-      check vec (non_mem (-1));
-      check vec (mem 0);
-      check vec (mem (len - 1));
-      check vec (non_mem len);
-      Array.iter (fun i -> check vec (mem i)) (Array.init len Fun.id)
+      check vec "-1" (non_mem (-1));
+      check vec "0" (mem 0);
+      check vec "len - 1" (mem (len - 1));
+      check vec "len" (non_mem len);
+      Array.iter (fun i -> check vec "all" (mem i)) (Array.init len Fun.id);
+      Array.fold_left
+        (fun (len, vec) _ ->
+          let i, vec = pop vec |> Option.get in
+          assert (i = len - 1);
+          len - 1, vec)
+        (len, vec)
+        (Array.init len Fun.id)
+      |> ignore
     ;;
 
     let () = test 31
     let () = test 32
     let () = test 33
-    let () = test 42
     let () = test 64
     let () = test 65
   end)
