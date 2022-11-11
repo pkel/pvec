@@ -1,181 +1,9 @@
-open Vector
-
-module Spec : Vec = struct
-  type 'a t = 'a list
-
-  let length = List.length
-  let empty () = []
-  let append a t = t @ [ a ]
-  let get i t = if i < 0 then None else List.nth_opt t i
-
-  let set i v t =
-    let n = List.length t in
-    if i < 0 || i > n
-    then None
-    else if i = n
-    then Some (append v t)
-    else Some (List.mapi (fun j x -> if i = j then v else x) t)
-  ;;
-
-  let peek t = List.fold_left (fun _ el -> Some el) None t
-
-  let pop t =
-    match List.rev t with
-    | [] -> None
-    | hd :: tl -> Some (hd, List.rev tl)
-  ;;
-
-  let get_exn i t = List.nth t i
-
-  let set_exn i x t =
-    match set i x t with
-    | None -> raise (Invalid_argument "out of bounds")
-    | Some x -> x
-  ;;
-
-  let to_list t = t
-end
-
-type action =
-  | Peek
-  | Pop
-  | Get of int
-  | Set of int * int
-  | Append of int
-
-let action_to_string = function
-  | Peek -> "Peek"
-  | Pop -> "Pop"
-  | Get i -> "Get " ^ string_of_int i
-  | Set (i, _) -> "Set " ^ string_of_int i
-  | Append _ -> "Append"
-;;
-
-let random_action length =
-  match Random.int 5 with
-  | 0 -> Peek
-  | 1 -> Pop
-  | 2 -> Get (Random.int (length + 1) - 1)
-  | 3 -> Set (Random.int (length + 2) - 1, Random.int 256)
-  | 4 -> Append (Random.int 256)
-  | _ -> assert false
-;;
-
-let start = Vector2.empty (), Spec.empty ()
-
-let apply (a, b) = function
-  | Peek -> if Vector2.peek a = Spec.peek b then Some (a, b) else None
-  | Pop ->
-    (match Vector2.pop a, Spec.pop b with
-     | Some (x, a), Some (y, b) when x = y -> Some (a, b)
-     | None, None -> Some (a, b)
-     | _ -> None)
-  | Get i ->
-    (match Vector2.get i a, Spec.get i b with
-     | Some x, Some y when x = y -> Some (a, b)
-     | None, None -> Some (a, b)
-     | _ -> None)
-  | Set (i, v) ->
-    (match Vector2.set i v a, Spec.set i v b with
-     | Some a, Some b when Vector2.to_list a = Spec.to_list b -> Some (a, b)
-     | None, None -> Some (a, b)
-     | _ -> None)
-  | Append v ->
-    (match Vector2.append v a, Spec.append v b with
-     | a, b when Vector2.to_list a = Spec.to_list b -> Some (a, b)
-     | _ -> None)
-;;
-
-let fuzz n =
-  let () = Random.init n in
-  let state = ref start in
-  for i = 1 to n / 2 do
-    state := apply !state (Append i) |> Option.get
-  done;
-  assert (Vector2.length (fst !state) = n / 2);
-  for _ = n / 2 to n do
-    let len = Vector2.length (fst !state) in
-    let action = random_action len in
-    match apply !state action with
-    | Some x -> state := x
-    | None ->
-      print_string "Spec: ";
-      List.map string_of_int (snd !state |> Spec.to_list)
-      |> String.concat ","
-      |> print_endline;
-      print_string "Vec2: ";
-      List.map string_of_int (fst !state |> Vector2.to_list)
-      |> String.concat ","
-      |> print_endline;
-      action_to_string action |> print_endline;
-      failwith "test failed"
-  done
-;;
-
-let%test_unit "fuzz vec2 10" = fuzz 10
-let%test_unit "fuzz vec2 100" = fuzz 100
-let%test_unit "fuzz vec2 1000" = fuzz 1000
-let%test_unit "fuzz vec2 10000" = fuzz 10000
-
-let start = Vector2.empty (), Vector32.empty ()
-
-let apply (a, b) = function
-  | Peek -> if Vector2.peek a = Vector32.peek b then Some (a, b) else None
-  | Pop ->
-    (match Vector2.pop a, Vector32.pop b with
-     | Some (x, a), Some (y, b) when x = y -> Some (a, b)
-     | None, None -> Some (a, b)
-     | _ -> None)
-  | Get i ->
-    (match Vector2.get i a, Vector32.get i b with
-     | Some x, Some y when x = y -> Some (a, b)
-     | None, None -> Some (a, b)
-     | _ -> None)
-  | Set (i, v) ->
-    (match Vector2.set i v a, Vector32.set i v b with
-     | Some a, Some b when Vector2.to_list a = Vector32.to_list b -> Some (a, b)
-     | None, None -> Some (a, b)
-     | _ -> None)
-  | Append v ->
-    (match Vector2.append v a, Vector32.append v b with
-     | a, b when Vector2.to_list a = Vector32.to_list b -> Some (a, b)
-     | _ -> None)
-;;
-
-let fuzz n =
-  let () = Random.init n in
-  let state = ref start in
-  for i = 1 to n / 2 do
-    state := apply !state (Append i) |> Option.get
-  done;
-  assert (Vector2.length (fst !state) = n / 2);
-  for _ = n / 2 to n do
-    let len = Vector2.length (fst !state) in
-    let action = random_action len in
-    match apply !state action with
-    | Some x -> state := x
-    | None ->
-      print_string "Vector32: ";
-      List.map string_of_int (snd !state |> Vector32.to_list)
-      |> String.concat ","
-      |> print_endline;
-      print_string "Vec2: ";
-      List.map string_of_int (fst !state |> Vector2.to_list)
-      |> String.concat ","
-      |> print_endline;
-      action_to_string action |> print_endline;
-      failwith "test failed"
-  done
-;;
-
-let%test_unit "fuzz vec32 10" = fuzz 10
-let%test_unit "fuzz vec32 100" = fuzz 100
-let%test_unit "fuzz vec32 1000" = fuzz 1000
-let%test_unit "fuzz vec32 10000" = fuzz 10000
-
+(******************************************************************************
+ * Two ad-hoc module tests that guided me during the first hours.
+ *****************************************************************************)
 let%test_module "Vec2" =
   (module struct
-    open Vector2
+    open Vector.Vector2
 
     let init len =
       let vec = ref (empty ()) in
@@ -239,7 +67,7 @@ let%test_module "Vec2" =
 
 let%test_module "Vec32" =
   (module struct
-    open Vector32
+    open Vector.Vector32
 
     let init len =
       let vec = ref (empty ()) in
@@ -286,3 +114,177 @@ let%test_module "Vec32" =
     let () = test 65
   end)
 ;;
+
+(******************************************************************************
+ * In-depth test with random actions. Compare vector implementations
+ * against list-based specification. Test persistence by maintaining and using
+ * multiple references to each trie.
+ *****************************************************************************)
+
+module Spec : Vector.Vec = struct
+  type 'a t = 'a list
+
+  let length = List.length
+  let empty () = []
+  let append a t = t @ [ a ]
+  let get i t = if i < 0 then None else List.nth_opt t i
+
+  let set i v t =
+    let n = List.length t in
+    if i < 0 || i > n
+    then None
+    else if i = n
+    then Some (append v t)
+    else Some (List.mapi (fun j x -> if i = j then v else x) t)
+  ;;
+
+  let peek t = List.fold_left (fun _ el -> Some el) None t
+
+  let pop t =
+    match List.rev t with
+    | [] -> None
+    | hd :: tl -> Some (hd, List.rev tl)
+  ;;
+
+  let get_exn i t = List.nth t i
+
+  let set_exn i x t =
+    match set i x t with
+    | None -> raise (Invalid_argument "out of bounds")
+    | Some x -> x
+  ;;
+
+  let to_list t = t
+end
+
+type 'el vectors_with_implementation =
+  | V :
+      { arr : 'vec array
+      ; peek : 'vec -> 'el option
+      ; pop : 'vec -> ('el * 'vec) option
+      ; get : int -> 'vec -> 'el option
+      ; set : int -> 'el -> 'vec -> 'vec option
+      ; append : 'el -> 'vec -> 'vec
+      ; to_list : 'vec -> 'el list
+      ; length : 'vec -> int
+      }
+      -> 'el vectors_with_implementation
+
+let vectors_with_implementation ~slots (module M : Vector.Vec) =
+  let open M in
+  V { arr = Array.make slots (empty ()); pop; peek; get; set; append; to_list; length }
+;;
+
+type action =
+  | Peek
+  | Pop
+  | Get of int
+  | Set of int * int
+  | Append of int
+
+let action_to_string = function
+  | Peek -> "Peek"
+  | Pop -> "Pop"
+  | Get i -> "Get " ^ string_of_int i
+  | Set (i, _) -> "Set " ^ string_of_int i
+  | Append _ -> "Append"
+;;
+
+let random_action length =
+  match Random.int 5 with
+  | 0 -> Peek
+  | 1 -> Pop
+  | 2 -> Get (Random.int (length + 1) - 1)
+  | 3 -> Set (Random.int (length + 2) - 1, Random.int 256)
+  | 4 -> Append (Random.int 256)
+  | _ -> assert false
+;;
+
+let apply ?(fail_fast = false) (V a, V b) ~src ~dst = function
+  | Peek -> a.peek a.arr.(src) = b.peek b.arr.(src)
+  | Pop ->
+    (match a.pop a.arr.(src), b.pop b.arr.(src) with
+     | Some (x, a'), Some (y, b') ->
+       a.arr.(dst) <- a';
+       b.arr.(dst) <- b';
+       x = y
+     | None, None -> true
+     | _ -> false)
+  | Get i ->
+    (match a.get i a.arr.(src), b.get i b.arr.(src) with
+     | Some x, Some y -> x = y
+     | None, None -> true
+     | _ -> false)
+  | Set (i, v) ->
+    (match a.set i v a.arr.(src), b.set i v b.arr.(src) with
+     | Some a', Some b' ->
+       if fail_fast && a.to_list a' <> b.to_list b'
+       then false
+       else (
+         a.arr.(dst) <- a';
+         b.arr.(dst) <- b';
+         true)
+     | None, None -> true
+     | _ -> false)
+  | Append v ->
+    let a' = a.append v a.arr.(src)
+    and b' = b.append v b.arr.(src) in
+    if fail_fast && a.to_list a' <> b.to_list b'
+    then false
+    else (
+      a.arr.(dst) <- a';
+      b.arr.(dst) <- b';
+      true)
+;;
+
+let random ~slots a b n =
+  let () = Random.init n in
+  let (V a) = vectors_with_implementation ~slots a in
+  let (V b) = vectors_with_implementation ~slots b in
+  let state = V a, V b in
+  let slot () = Random.int (Array.length a.arr) in
+  for i = 1 to n / 2 do
+    (* grow vectors randomly *)
+    let src, dst = slot (), slot () in
+    assert (apply state ~src ~dst (Append i))
+  done;
+  for _ = n / 2 to n do
+    (* random steps *)
+    let src, dst = slot (), slot () in
+    let action = random_action (a.length a.arr.(src)) in
+    if not (apply (V a, V b) ~src ~dst action) then failwith (action_to_string action)
+  done;
+  for i = 0 to slots - 1 do
+    assert (a.to_list a.arr.(i) = b.to_list b.arr.(i))
+  done
+;;
+
+open Vector
+
+let spec = (module Spec : Vec)
+let vec2 = (module Vector2 : Vec)
+
+let vec4 =
+  (module Make (struct
+    let branching_factor_log2 = 2
+  end) : Vec)
+;;
+
+let vec32 = (module Vector32 : Vec)
+
+let%test_unit "random vec2 10" = random ~slots:1 vec2 spec 10
+let%test_unit "random vec2 100" = random ~slots:2 vec2 spec 100
+let%test_unit "random vec2 1000" = random ~slots:4 vec2 spec 1000
+let%test_unit "random vec2 10000" = random ~slots:8 vec2 spec 10000
+let%test_unit "random vec4 10" = random ~slots:1 vec4 spec 10
+let%test_unit "random vec4 100" = random ~slots:2 vec4 spec 100
+let%test_unit "random vec4 1000" = random ~slots:4 vec4 spec 1000
+let%test_unit "random vec4 10000" = random ~slots:8 vec4 spec 10000
+let%test_unit "random vec32 10" = random ~slots:1 vec32 spec 10
+let%test_unit "random vec32 100" = random ~slots:2 vec32 spec 100
+let%test_unit "random vec32 1000" = random ~slots:4 vec32 spec 1000
+let%test_unit "random vec32 10000" = random ~slots:8 vec32 spec 10000
+let%test_unit "random vec32 100000" = random ~slots:8 vec32 vec4 100000
+let%test_unit "random vec32 1000000" = random ~slots:4 vec32 vec4 1000000
+let%test_unit "random vec32 1000000" = random ~slots:16 vec32 vec4 1000000
+let%test_unit "random vec32 1000000" = random ~slots:1024 vec32 vec4 1000000
