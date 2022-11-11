@@ -1,4 +1,4 @@
-module type Vec = sig
+module type T = sig
   type 'a t
 
   val length : 'a t -> int
@@ -15,9 +15,9 @@ module type Vec = sig
   val to_list : 'a t -> 'a list
 end
 
-module Make (P : sig
+module Custom (P : sig
   val branching_factor_log2 : int
-end) : Vec = struct
+end) : T = struct
   let () = if P.branching_factor_log2 < 1 then failwith "invalid branching_factor_log2"
   let bits = P.branching_factor_log2
   let width = 1 lsl bits
@@ -223,10 +223,6 @@ end) : Vec = struct
   let to_list t = rev_to_seq t |> Seq.fold_left (fun acc el -> el :: acc) []
 end
 
-module Vector2 = Make (struct
-  let branching_factor_log2 = 1
-end)
-
-module Vector32 = Make (struct
+include Custom (struct
   let branching_factor_log2 = 5
 end)

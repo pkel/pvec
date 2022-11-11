@@ -1,9 +1,21 @@
+module Vec2 = Vector.Custom (struct
+  let branching_factor_log2 = 1
+end)
+
+module Vec4 = Vector.Custom (struct
+  let branching_factor_log2 = 2
+end)
+
+module Vec32 = Vector.Custom (struct
+  let branching_factor_log2 = 5
+end)
+
 (******************************************************************************
  * Two ad-hoc module tests that guided me during the first hours.
  *****************************************************************************)
 let%test_module "Vec2" =
   (module struct
-    open Vector.Vector2
+    open Vec2
 
     let init len =
       let vec = ref (empty ()) in
@@ -67,7 +79,7 @@ let%test_module "Vec2" =
 
 let%test_module "Vec32" =
   (module struct
-    open Vector.Vector32
+    open Vec32
 
     let init len =
       let vec = ref (empty ()) in
@@ -121,7 +133,7 @@ let%test_module "Vec32" =
  * multiple references to each trie.
  *****************************************************************************)
 
-module Spec : Vector.Vec = struct
+module Spec : Vector.T = struct
   type 'a t = 'a list
 
   let length = List.length
@@ -172,7 +184,7 @@ type 'el vectors_with_implementation =
       }
       -> 'el vectors_with_implementation
 
-let vectors_with_implementation ~slots (module M : Vector.Vec) =
+let vectors_with_implementation ~slots (module M : Vector.T) =
   let open M in
   V { arr = Array.make slots (empty ()); pop; peek; get; set; append; to_list; length }
 ;;
@@ -261,18 +273,10 @@ let random ~slots a b n =
   done
 ;;
 
-open Vector
-
-let spec = (module Spec : Vec)
-let vec2 = (module Vector2 : Vec)
-
-let vec4 =
-  (module Make (struct
-    let branching_factor_log2 = 2
-  end) : Vec)
-;;
-
-let vec32 = (module Vector32 : Vec)
+let spec = (module Spec : Vector.T)
+let vec2 = (module Vec2 : Vector.T)
+let vec4 = (module Vec4 : Vector.T)
+let vec32 = (module Vec32 : Vector.T)
 
 let%test_unit "random vec2 10" = random ~slots:1 vec2 spec 10
 let%test_unit "random vec2 100" = random ~slots:2 vec2 spec 100
