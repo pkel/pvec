@@ -10,6 +10,8 @@ module type Vec = sig
   val pop : 'a t -> ('a * 'a t) option
   val get_exn : int -> 'a t -> 'a
   val set_exn : int -> 'a -> 'a t -> 'a t
+  val to_seq : 'a t -> 'a Seq.t
+  val rev_to_seq : 'a t -> 'a Seq.t
   val to_list : 'a t -> 'a list
 end
 
@@ -187,10 +189,38 @@ end) : Vec = struct
     | Some x -> x
   ;;
 
-  let to_list t =
-    (* TODO. implement to_list properly *)
-    List.init (length t) (fun i -> get_exn i t)
+  let to_seq t =
+    let open Seq in
+    let rec trie = function
+      | Empty -> empty
+      | Leave a -> Array.to_seq a
+      | Node a -> Array.to_seq a |> Seq.concat_map trie
+    in
+    let tail = init (tail_size t) (fun i -> Array.get t.tail i |> Option.get) in
+    append (trie t.trie) tail
   ;;
+
+  let array_rev_to_seq arr =
+    let open Seq in
+    let n = Array.length arr in
+    init n (fun i -> arr.(n - i - 1))
+  ;;
+
+  let rev_to_seq t =
+    let open Seq in
+    let rec trie = function
+      | Empty -> empty
+      | Leave a -> array_rev_to_seq a
+      | Node a -> array_rev_to_seq a |> Seq.concat_map trie
+    in
+    let tail =
+      let n = tail_size t in
+      init n (fun i -> Array.get t.tail (n - i - 1) |> Option.get)
+    in
+    append tail (trie t.trie)
+  ;;
+
+  let to_list t = rev_to_seq t |> Seq.fold_left (fun acc el -> el :: acc) []
 end
 
 module Vector2 = Make (struct

@@ -154,6 +154,8 @@ module Spec : Vector.Vec = struct
     | Some x -> x
   ;;
 
+  let to_seq t = List.to_seq t
+  let rev_to_seq t = List.to_seq (List.rev t)
   let to_list t = t
 end
 
