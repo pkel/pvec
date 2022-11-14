@@ -16,10 +16,11 @@
 
 (package
  (name _dev)
- (synopsis "Development tools")
+ (synopsis "Development tools & benchmark")
  (depends
    (ocamlformat (= 0.23.0))
    (merlin (>= 4.6))
+   (mtime (>= 1.4.0))
    (odig (>= 0.0.8))
    (odoc (>= 2.1.1))
    (utop (>= 2.10.0))

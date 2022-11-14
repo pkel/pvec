@@ -54,6 +54,16 @@ module type T = sig
 
   (** [list v] converts vector [v] to a list. *)
   val to_list : 'a t -> 'a list
+
+  (** [init n f] returns a vector of length [n] holding elements [f(0)], [f(1)],
+      ... . *)
+  val init : int -> (int -> 'a) -> 'a t
+
+  (** [iter f v] applies [f] to elements of [v] in order of the vector's index. *)
+  val iter : ('a -> unit) -> 'a t -> unit
+
+  (** [iter f v] applies [f] to elements of [v] in reverse order. *)
+  val rev_iter : ('a -> unit) -> 'a t -> unit
 end
 
 include T

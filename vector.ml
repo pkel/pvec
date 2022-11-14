@@ -13,6 +13,9 @@ module type T = sig
   val to_seq : 'a t -> 'a Seq.t
   val rev_to_seq : 'a t -> 'a Seq.t
   val to_list : 'a t -> 'a list
+  val init : int -> (int -> 'a) -> 'a t
+  val iter : ('a -> unit) -> 'a t -> unit
+  val rev_iter : ('a -> unit) -> 'a t -> unit
 end
 
 module Custom (P : sig
@@ -221,6 +224,14 @@ end) : T = struct
   ;;
 
   let to_list t = rev_to_seq t |> Seq.fold_left (fun acc el -> el :: acc) []
+
+  let init n f =
+    (* TODO. avoid allocating n-1 headers *)
+    Seq.init n f |> Seq.fold_left (fun acc el -> append el acc) (empty ())
+  ;;
+
+  let iter f t = to_seq t |> Seq.iter f
+  let rev_iter f t = rev_to_seq t |> Seq.iter f
 end
 
 include Custom (struct

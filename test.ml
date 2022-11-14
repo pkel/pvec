@@ -169,6 +169,9 @@ module Spec : Vector.T = struct
   let to_seq t = List.to_seq t
   let rev_to_seq t = List.to_seq (List.rev t)
   let to_list t = t
+  let init = List.init
+  let iter = List.iter
+  let rev_iter f t = List.rev t |> List.iter f
 end
 
 type 'el vectors_with_implementation =

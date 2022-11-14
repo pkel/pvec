@@ -10,3 +10,13 @@
  (inline_tests)
  (preprocess
   (pps ppx_expect)))
+
+(executable
+ (name benchmark)
+ (modules benchmark)
+ (libraries mtime.clock.os vector))
+
+(rule
+ (alias runtest)
+ (action
+  (run ./benchmark.exe)))
