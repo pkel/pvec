@@ -1,12 +1,12 @@
-module Vec2 = Vector.Custom (struct
+module Vec2 = Vector.Make (struct
   let branching_factor_log2 = 1
 end)
 
-module Vec4 = Vector.Custom (struct
+module Vec4 = Vector.Make (struct
   let branching_factor_log2 = 2
 end)
 
-module Vec32 = Vector.Custom (struct
+module Vec32 = Vector.Make (struct
   let branching_factor_log2 = 5
 end)
 
@@ -134,9 +134,8 @@ let%test_module "Vec32" =
  *****************************************************************************)
 
 module Spec : Vector.T = struct
-  type 'a t = 'a list
+  include List
 
-  let length = List.length
   let empty () = []
   let append a t = t @ [ a ]
   let get i t = if i < 0 then None else List.nth_opt t i
@@ -166,12 +165,11 @@ module Spec : Vector.T = struct
     | Some x -> x
   ;;
 
-  let to_seq t = List.to_seq t
   let rev_to_seq t = List.to_seq (List.rev t)
   let to_list t = t
-  let init = List.init
-  let iter = List.iter
+  let of_list l = l
   let rev_iter f t = List.rev t |> List.iter f
+  let debug_pp _ _ = failwith "not implemented"
 end
 
 type 'el vectors_with_implementation =
@@ -297,3 +295,55 @@ let%test_unit "random vec32 100000" = random ~slots:8 vec32 vec4 100000
 let%test_unit "random vec32 1000000" = random ~slots:4 vec32 vec4 1000000
 let%test_unit "random vec32 1000000" = random ~slots:16 vec32 vec4 1000000
 let%test_unit "random vec32 1000000" = random ~slots:1024 vec32 vec4 1000000
+
+(******************************************************************************
+ * of_sequence was quite a challenge!
+ *****************************************************************************)
+
+let of_sequence (module M : Vector.T) n =
+  let open M in
+  let vec = init n Fun.id in
+  for i = 0 to n - 1 do
+    if not (get i vec = Some i)
+    then (
+      Printf.eprintf "# of_seq\n";
+      debug_pp Format.err_formatter vec;
+      Printf.eprintf "# append\n";
+      debug_pp
+        Format.err_formatter
+        (Seq.init n Fun.id |> Seq.fold_left (fun v x -> append x v) (empty ()));
+      Printf.eprintf "# of_seq; n - 1\n";
+      debug_pp Format.err_formatter (init (n - 1) Fun.id);
+      Printf.kprintf failwith "get %i/%i" i n)
+  done;
+  assert (get n vec = None)
+;;
+
+let%test_unit "of_sequence vec2 0" = of_sequence vec2 0
+let%test_unit "of_sequence vec2 1" = of_sequence vec2 1
+let%test_unit "of_sequence vec2 2" = of_sequence vec2 2
+let%test_unit "of_sequence vec2 3" = of_sequence vec2 3
+
+let%test_unit "of_sequence vec2 0..99" =
+  for i = 0 to 99 do
+    of_sequence vec2 i
+  done
+;;
+
+let%test_unit "of_sequence vec4 0..99" =
+  for i = 0 to 99 do
+    of_sequence vec4 i
+  done
+;;
+
+let%test_unit "of_sequence vec2 0..99" =
+  for i = 0 to 99 do
+    of_sequence vec2 i
+  done
+;;
+
+let%test_unit "of_sequence vec32 1000..1099" =
+  for i = 1000 to 1099 do
+    of_sequence vec32 i
+  done
+;;

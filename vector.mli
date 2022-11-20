@@ -52,8 +52,14 @@ module type T = sig
   (** [rev_to_seq v] iterates over vector [v] back-to-front. *)
   val rev_to_seq : 'a t -> 'a Seq.t
 
-  (** [list v] converts vector [v] to a list. *)
+  (** [of_seq s] stores the elements of sequence [s] in a vector. *)
+  val of_seq : 'a Seq.t -> 'a t
+
+  (** [to_list v] converts vector [v] to a list. *)
   val to_list : 'a t -> 'a list
+
+  (** [of_list v] converts list [l] to a vector. *)
+  val of_list : 'a list -> 'a t
 
   (** [init n f] returns a vector of length [n] holding elements [f(0)], [f(1)],
       ... . *)
@@ -64,6 +70,8 @@ module type T = sig
 
   (** [iter f v] applies [f] to elements of [v] in reverse order. *)
   val rev_iter : ('a -> unit) -> 'a t -> unit
+
+  val debug_pp : Format.formatter -> 'a t -> unit
 end
 
 include T
@@ -71,13 +79,13 @@ include T
 (** Create vectors with custom branching factor.
 
     {[
-module V = Custom (struct
+module V = Make (struct
   let branching_factor_log2 = n
 end)
     ]}
     uses branching factor 2ⁿ.
     The default implementation {!Vector} uses branching factor 32.
    *)
-module Custom (_ : sig
+module Make (_ : sig
   val branching_factor_log2 : int
 end) : T

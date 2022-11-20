@@ -12,13 +12,16 @@ module type T = sig
   val set_exn : int -> 'a -> 'a t -> 'a t
   val to_seq : 'a t -> 'a Seq.t
   val rev_to_seq : 'a t -> 'a Seq.t
+  val of_seq : 'a Seq.t -> 'a t
   val to_list : 'a t -> 'a list
+  val of_list : 'a list -> 'a t
   val init : int -> (int -> 'a) -> 'a t
   val iter : ('a -> unit) -> 'a t -> unit
   val rev_iter : ('a -> unit) -> 'a t -> unit
+  val debug_pp : Format.formatter -> 'a t -> unit
 end
 
-module Custom (P : sig
+module Make (P : sig
   val branching_factor_log2 : int
 end) : T = struct
   let () = if P.branching_factor_log2 < 1 then failwith "invalid branching_factor_log2"
@@ -42,6 +45,38 @@ end) : T = struct
   let empty () = { trie = Empty; shift = 0; tail = Array.make width None; last = -1 }
   let trie_size t = (t.last lsr bits) lsl bits
   let tail_size t = (t.last land mask) + 1
+
+  let debug_pp fmt t =
+    let open Format in
+    fprintf
+      fmt
+      "size: %i\nshift: %i\nwidth: %i\ntailsize: %i\n"
+      (length t)
+      t.shift
+      width
+      (tail_size t);
+    let indent level =
+      for _i = 1 to level do
+        pp_print_string fmt "  "
+      done
+    in
+    let rec trie level = function
+      | Empty ->
+        indent level;
+        pp_print_string fmt "empty";
+        pp_print_newline fmt ()
+      | Leave _ ->
+        indent level;
+        pp_print_string fmt "leave";
+        pp_print_newline fmt ()
+      | Node arr ->
+        indent level;
+        pp_print_string fmt "node";
+        pp_print_newline fmt ();
+        Array.iter (trie (level + 1)) arr
+    in
+    trie 1 t.trie
+  ;;
 
   let tail_full t =
     assert (tail_size t + trie_size t = length t);
@@ -153,7 +188,9 @@ end) : T = struct
     let rec find shift = function
       | Node arr -> find (shift - bits) arr.((key lsr shift) land mask)
       | Leave arr -> Some arr.(key land mask)
-      | Empty -> assert false
+      | Empty ->
+        debug_pp Format.err_formatter t;
+        failwith "vector: malformed trie"
     in
     if key < 0 || key > t.last
     then None
@@ -225,15 +262,77 @@ end) : T = struct
 
   let to_list t = rev_to_seq t |> Seq.fold_left (fun acc el -> el :: acc) []
 
-  let init n f =
-    (* TODO. avoid allocating n-1 headers *)
-    Seq.init n f |> Seq.fold_left (fun acc el -> append el acc) (empty ())
+  (* Getting this right took me quite some time. There must be a simpler solution to this.
+     Please create PR or contact me if you have one. Thanks! *)
+  let of_seq seq =
+    let f (i, `S shift, root, path, leave_buf, leave_buf_size) el =
+      if leave_buf_size < width
+      then (
+        (* element fits into current leave *)
+        let () = leave_buf.(leave_buf_size) <- el in
+        i + 1, `S shift, root, path, leave_buf, leave_buf_size + 1)
+      else (
+        (* leave is full, create new *)
+        let new_leave_buf = Array.make width el in
+        let new_leave_buf_size = 1 in
+        (* and write into trie *)
+        let rec set down_path child = function
+          | (arr, size) :: up_path ->
+            if size < width
+            then (
+              (* child fits into current node *)
+              let () = arr.(size) <- child in
+              let path =
+                List.fold_left
+                  (fun path x -> x :: path)
+                  ((arr, size + 1) :: up_path)
+                  down_path
+              in
+              i + 1, `S shift, root, path, new_leave_buf, new_leave_buf_size)
+            else (
+              (* current trie node is full, backtrack *)
+              let arr = Array.make width Empty in
+              let () = arr.(0) <- child in
+              set ((arr, 1) :: down_path) (Node arr) up_path)
+          | [] ->
+            (* trie is full, create new root *)
+            (match root with
+             | Node _ | Leave _ ->
+               let arr = Array.make width Empty in
+               let () =
+                 arr.(0) <- root;
+                 arr.(1) <- child
+               in
+               let path = List.rev ((arr, 2) :: down_path) in
+               i + 1, `S (shift + bits), Node arr, path, new_leave_buf, new_leave_buf_size
+             | Empty ->
+               (* trie does not exist yet *)
+               let arr = Array.make width Empty in
+               let () = arr.(0) <- child in
+               let path = List.rev ((arr, 1) :: down_path) in
+               i + 1, `S (shift + bits), Node arr, path, new_leave_buf, new_leave_buf_size)
+        in
+        set [] (Leave leave_buf) path)
+    in
+    match seq () with
+    | Seq.Nil -> empty ()
+    | Cons (fst, seq) ->
+      let leave_buf = Array.make width fst in
+      let last, `S shift, trie, _path, leave_buf, leave_buf_size =
+        Seq.fold_left f (0, `S bits, Empty, [], leave_buf, 1) seq
+      in
+      let tail =
+        Array.mapi (fun i x -> if i < leave_buf_size then Some x else None) leave_buf
+      in
+      { trie; shift; last; tail }
   ;;
 
+  let of_list l = List.to_seq l |> of_seq
+  let init n f = Seq.init n f |> of_seq
   let iter f t = to_seq t |> Seq.iter f
   let rev_iter f t = rev_to_seq t |> Seq.iter f
 end
 
-include Custom (struct
+include Make (struct
   let branching_factor_log2 = 5
 end)
