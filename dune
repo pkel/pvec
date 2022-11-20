@@ -13,6 +13,8 @@
 
 (executable
  (name benchmark)
+ (public_name benchmark)
+ (package _dev)
  (modules benchmark)
  (libraries mtime.clock.os vector))
 
