@@ -1,12 +1,12 @@
 (library
- (name vector)
- (modules vector)
- (public_name vector))
+ (name pvec)
+ (modules pvec)
+ (public_name pvec))
 
 (library
  (name test)
  (modules test)
- (libraries vector)
+ (libraries pvec)
  (inline_tests)
  (preprocess
   (pps ppx_expect)))
@@ -16,7 +16,7 @@
  (public_name benchmark)
  (package _dev)
  (modules benchmark)
- (libraries mtime.clock.os vector))
+ (libraries mtime.clock.os pvec))
 
 (rule
  (alias runtest)

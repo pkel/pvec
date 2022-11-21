@@ -6,7 +6,7 @@ let scenario1_list ~n =
 ;;
 
 let scenario1_vector ~n =
-  let open Vector in
+  let open Pvec in
   init n Fun.id |> iter ignore
 ;;
 

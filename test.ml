@@ -1,12 +1,12 @@
-module Vec2 = Vector.Make (struct
+module Vec2 = Pvec.Make (struct
   let branching_factor_log2 = 1
 end)
 
-module Vec4 = Vector.Make (struct
+module Vec4 = Pvec.Make (struct
   let branching_factor_log2 = 2
 end)
 
-module Vec32 = Vector.Make (struct
+module Vec32 = Pvec.Make (struct
   let branching_factor_log2 = 5
 end)
 
@@ -133,7 +133,7 @@ let%test_module "Vec32" =
  * multiple references to each trie.
  *****************************************************************************)
 
-module Spec : Vector.T = struct
+module Spec : Pvec.T = struct
   include List
 
   let empty () = []
@@ -185,7 +185,7 @@ type 'el vectors_with_implementation =
       }
       -> 'el vectors_with_implementation
 
-let vectors_with_implementation ~slots (module M : Vector.T) =
+let vectors_with_implementation ~slots (module M : Pvec.T) =
   let open M in
   V { arr = Array.make slots (empty ()); pop; peek; get; set; append; to_list; length }
 ;;
@@ -274,10 +274,10 @@ let random ~slots a b n =
   done
 ;;
 
-let spec = (module Spec : Vector.T)
-let vec2 = (module Vec2 : Vector.T)
-let vec4 = (module Vec4 : Vector.T)
-let vec32 = (module Vec32 : Vector.T)
+let spec = (module Spec : Pvec.T)
+let vec2 = (module Vec2 : Pvec.T)
+let vec4 = (module Vec4 : Pvec.T)
+let vec32 = (module Vec32 : Pvec.T)
 
 let%test_unit "random vec2 10" = random ~slots:1 vec2 spec 10
 let%test_unit "random vec2 100" = random ~slots:2 vec2 spec 100
@@ -300,7 +300,7 @@ let%test_unit "random vec32 1000000" = random ~slots:1024 vec32 vec4 1000000
  * of_sequence was quite a challenge!
  *****************************************************************************)
 
-let of_sequence (module M : Vector.T) n =
+let of_sequence (module M : Pvec.T) n =
   let open M in
   let vec = init n Fun.id in
   for i = 0 to n - 1 do

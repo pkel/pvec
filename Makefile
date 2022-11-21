@@ -8,7 +8,7 @@ check-format:
 	opam exec dune -- build @fmt
 
 deps: _opam dune-project
-	opam exec dune -- build {vector,_dev}.opam
+	opam exec dune -- build {pvec,_dev}.opam
 	opam install . --deps-only --working-dir
 
 _opam:

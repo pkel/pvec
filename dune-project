@@ -1,17 +1,17 @@
 (lang dune 3.5)
 
-(name ocaml-vector)
+(name pvec)
 (generate_opam_files true)
-(source (uri "git+ssh://git@github.com:pkel/ocaml-vector.git"))
-(homepage "https://github.com/pkel/ocaml-vector")
-(bug_reports "https://github.com/pkel/ocaml-vector/issues")
+(source (uri "git+ssh://git@github.com:pkel/pvec.git"))
+(homepage "https://github.com/pkel/pvec")
+(bug_reports "https://github.com/pkel/pvec/issues")
 (license none)
 (authors "Patrik Keller")
 (maintainers "patrik@pkel.dev")
 
 (package
- (name vector)
- (synopsis "Clojure-style vectors for OCaml")
+ (name pvec)
+ (synopsis "Persistent vectors for OCaml")
  (version 0.0.0))
 
 (package
