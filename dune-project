@@ -11,7 +11,7 @@
 
 (package
  (name pvec)
- (synopsis "Persistent vectors for OCaml")
+ (synopsis "Persistent vectors")
  (version 0.0.0)
  (depends (mtime (= :test))))
 

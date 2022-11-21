@@ -1,4 +1,4 @@
-# Persistent Vectors for OCaml
+# Persistent vectors for OCaml
 
 https://hypirion.com/musings/understanding-persistent-vector-pt-1
 
@@ -9,6 +9,6 @@ https://hypirion.com/musings/understanding-persistent-vector-pt-1
 - [ ] benchmark against list and array-based vector
 - [ ] provide a couple of convenience functions (fold, map)
 - [ ] slice seq, copy, map & fold
-- [ ] write intro to `vector.mli` and put in this readme
-- [ ] CI
+- [ ] write intro to `pvec.mli` and put in this readme
+- [x] CI
 - [ ] pick license and release
