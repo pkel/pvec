@@ -7,7 +7,7 @@ license: "none"
 homepage: "https://github.com/pkel/pvec"
 bug-reports: "https://github.com/pkel/pvec/issues"
 depends: [
-  "dune" {>= "3.5"}
+  "dune" {>= "3.0"}
   "ocamlformat" {>= "0.23.0"}
   "merlin"
   "odig"

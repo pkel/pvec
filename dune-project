@@ -1,4 +1,4 @@
-(lang dune 3.5)
+(lang dune 3.0)
 
 (name pvec)
 (generate_opam_files true)
