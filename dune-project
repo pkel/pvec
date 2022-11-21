@@ -13,7 +13,7 @@
  (name pvec)
  (synopsis "Persistent vectors")
  (version 0.0.0)
- (depends (mtime (= :test))))
+ (depends (mtime :with-test)))
 
 (package
  (name _dev)
