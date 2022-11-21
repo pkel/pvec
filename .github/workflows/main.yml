@@ -30,8 +30,9 @@ jobs:
         uses: ocaml/setup-ocaml@v2
         with:
           ocaml-compiler: ${{ matrix.ocaml-compiler }}
+          opam-local-packages: pvec.opam
 
-      - run: opam install . --deps-only --with-doc --with-test
+      - run: opam install pvec.opam --deps-only --with-doc --with-test
 
       - run: opam exec -- dune build
 

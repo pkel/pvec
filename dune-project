@@ -12,16 +12,16 @@
 (package
  (name pvec)
  (synopsis "Persistent vectors for OCaml")
- (version 0.0.0))
+ (version 0.0.0)
+ (depends (mtime (= :test))))
 
 (package
  (name _dev)
- (synopsis "Development tools & benchmark")
+ (synopsis "Dev tools")
  (depends
-   (ocamlformat (= 0.23.0))
-   (merlin (>= 4.6))
-   (mtime (>= 1.4.0))
-   (odig (>= 0.0.8))
-   (odoc (>= 2.1.1))
-   (utop (>= 2.10.0))
+   (ocamlformat (>= 0.23.0))
+   merlin
+   odig
+   odoc
+   utop
    ))
