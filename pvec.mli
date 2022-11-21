@@ -84,7 +84,7 @@ module V = Make (struct
 end)
     ]}
     uses branching factor 2ⁿ.
-    The default implementation {!Vector} uses branching factor 32.
+    The default implementation {!Pvec} uses branching factor 32.
    *)
 module Make (_ : sig
   val branching_factor_log2 : int
