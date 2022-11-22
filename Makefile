@@ -2,7 +2,7 @@ test: _opam
 	opam exec dune -- runtest
 
 format: _opam
-	opam exec dune -- build @fmt --auto-promote || true
+	opam exec dune -- build @fmt --auto-promote
 
 check-format: _opam
 	opam exec dune -- build @fmt

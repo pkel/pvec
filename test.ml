@@ -297,7 +297,8 @@ let%test_unit "random vec32 1000000" = random ~slots:16 vec32 vec4 1000000
 let%test_unit "random vec32 1000000" = random ~slots:1024 vec32 vec4 1000000
 
 (******************************************************************************
- * of_sequence was quite a challenge!
+ * Implementing Pvec.of_seq was quite challenging. This test helped me to get
+ * it right.
  *****************************************************************************)
 
 let of_sequence (module M : Pvec.T) n =
@@ -311,7 +312,7 @@ let of_sequence (module M : Pvec.T) n =
       Printf.eprintf "# append\n";
       debug_pp
         Format.err_formatter
-        (Seq.init n Fun.id |> Seq.fold_left (fun v x -> append x v) (empty ()));
+        (List.init n Fun.id |> List.fold_left (fun v x -> append x v) (empty ()));
       Printf.eprintf "# of_seq; n - 1\n";
       debug_pp Format.err_formatter (init (n - 1) Fun.id);
       Printf.kprintf failwith "get %i/%i" i n)
