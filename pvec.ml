@@ -3,21 +3,29 @@ module type T = sig
 
   val length : 'a t -> int
   val empty : unit -> 'a t
+  val init : int -> (int -> 'a) -> 'a t
   val append : 'a -> 'a t -> 'a t
-  val get : int -> 'a t -> 'a option
   val set : int -> 'a -> 'a t -> 'a t option
+  val get : int -> 'a t -> 'a option
   val peek : 'a t -> 'a option
   val pop : 'a t -> ('a * 'a t) option
   val get_exn : int -> 'a t -> 'a
   val set_exn : int -> 'a -> 'a t -> 'a t
+  val map : ('a -> 'b) -> 'a t -> 'b t
+  val mapi : (int -> 'a -> 'b) -> 'a t -> 'b t
+  val fold_left : ('a -> 'b -> 'a) -> 'a -> 'b t -> 'a
+  val fold_right : ('a -> 'b -> 'b) -> 'a t -> 'b -> 'b
+  val iter : ('a -> unit) -> 'a t -> unit
+  val rev_iter : ('a -> unit) -> 'a t -> unit
   val to_seq : 'a t -> 'a Seq.t
   val rev_to_seq : 'a t -> 'a Seq.t
   val of_seq : 'a Seq.t -> 'a t
   val to_list : 'a t -> 'a list
+  val rev_to_list : 'a t -> 'a list
   val of_list : 'a list -> 'a t
-  val init : int -> (int -> 'a) -> 'a t
-  val iter : ('a -> unit) -> 'a t -> unit
-  val rev_iter : ('a -> unit) -> 'a t -> unit
+  val to_array : 'a t -> 'a array
+  val rev_to_array : 'a t -> 'a array
+  val of_array : 'a array -> 'a t
   val debug_pp : Format.formatter -> 'a t -> unit
 end
 
@@ -229,10 +237,36 @@ end) : T = struct
     | Some x -> x
   ;;
 
+  let map f t =
+    let rec trie = function
+      | Empty -> Empty
+      | Leave a -> Leave (Array.map f a)
+      | Node a -> Node (Array.map trie a)
+    in
+    let tail =
+      Array.map
+        (function
+         | Some x -> Some (f x)
+         | None -> None)
+        t.tail
+    in
+    { t with trie = trie t.trie; tail }
+  ;;
+
+  let mapi f t =
+    let i = ref 0 in
+    let f x =
+      let j = !i in
+      incr i;
+      f j x
+    in
+    map f t
+  ;;
+
   module Seq = struct
     include Seq
 
-    (* This bill become redundant in OCaml version > 4.08.1 *)
+    (* This will become redundant in OCaml version > 4.08.1 *)
 
     let concat_map = flat_map
 
@@ -245,6 +279,16 @@ end) : T = struct
       match a () with
       | Nil -> b ()
       | Cons (x, a) -> Cons (x, append a b)
+    ;;
+
+    let iteri f s =
+      let i = ref 0 in
+      let f x =
+        let r = f !i x in
+        incr i;
+        r
+      in
+      iter f s
     ;;
   end
 
@@ -279,10 +323,33 @@ end) : T = struct
     append tail (trie t.trie)
   ;;
 
+  let iter f t = to_seq t |> Seq.iter f
+  let rev_iter f t = rev_to_seq t |> Seq.iter f
   let to_list t = rev_to_seq t |> Seq.fold_left (fun acc el -> el :: acc) []
+  let rev_to_list t = to_seq t |> Seq.fold_left (fun acc el -> el :: acc) []
+
+  let to_array t =
+    match peek t with
+    | Some dummy ->
+      let n = length t in
+      let a = Array.make n dummy in
+      let () = Seq.iteri (fun i x -> a.(i) <- x) (to_seq t) in
+      a
+    | None -> [||]
+  ;;
+
+  let rev_to_array t =
+    match peek t with
+    | Some dummy ->
+      let n = length t in
+      let a = Array.make n dummy in
+      let () = Seq.iteri (fun i x -> a.(i) <- x) (rev_to_seq t) in
+      a
+    | None -> [||]
+  ;;
 
   (* Getting this right took me quite some time. There must be a simpler solution to this.
-     Please create PR or contact me if you have one. Thanks! *)
+     Please create a PR or contact me if you have one. Thanks! *)
   let of_seq seq =
     let f (i, `S shift, root, path, leave_buf, leave_buf_size) el =
       if leave_buf_size < width
@@ -347,9 +414,10 @@ end) : T = struct
   ;;
 
   let of_list l = List.to_seq l |> of_seq
+  let of_array a = Array.to_seq a |> of_seq
+  let fold_left f init t = Seq.fold_left f init (to_seq t)
+  let fold_right f t init = Seq.fold_left (fun a b -> f b a) init (rev_to_seq t)
   let init n f = Seq.init n f |> of_seq
-  let iter f t = to_seq t |> Seq.iter f
-  let rev_iter f t = rev_to_seq t |> Seq.iter f
 end
 
 include Make (struct

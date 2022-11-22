@@ -168,6 +168,10 @@ module Spec : Pvec.T = struct
   let rev_to_seq t = List.to_seq (List.rev t)
   let to_list t = t
   let of_list l = l
+  let rev_to_list _ = failwith "not implemented"
+  let of_array _ = failwith "not implemented"
+  let rev_to_array _ = failwith "not implemented"
+  let to_array _ = failwith "not implemented"
   let rev_iter f t = List.rev t |> List.iter f
   let debug_pp _ _ = failwith "not implemented"
 end

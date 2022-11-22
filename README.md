@@ -1,6 +1,5 @@
 # Persistent vectors for OCaml
 
-
 The `pvec` library exposes a single module `Pvec`. You can explore its
 interface online.
 - https://pkel.github.io/pvec/pvec/Pvec/index.html
@@ -15,9 +14,9 @@ Background info is provided elsewhere:
 - [x] base implementation
 - [x] test random updates & persistence
 - [x] basic documentation
-- [ ] benchmark against list and array-based vector
-- [ ] provide a couple of convenience functions (fold, map)
-- [ ] slice seq, copy, map & fold
-- [ ] write intro to `pvec.mli` and put in this readme
-- [x] CI
+- [x] setup CI
+- [x] provide a couple of convenience functions (fold, map)
+- [ ] write intro to `pvec.mli`, also include in this readme
 - [ ] pick license and release
+- [ ] more benchmarks
+- [ ] slice/range support for seq, copy, map & fold
