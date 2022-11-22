@@ -229,6 +229,25 @@ end) : T = struct
     | Some x -> x
   ;;
 
+  module Seq = struct
+    include Seq
+
+    (* This bill become redundant in OCaml version > 4.08.1 *)
+
+    let concat_map = flat_map
+
+    let init n f =
+      let rec seq i () = if i >= n then Nil else Cons (f i, seq (i + 1)) in
+      seq 0
+    ;;
+
+    let rec append a b () =
+      match a () with
+      | Nil -> b ()
+      | Cons (x, a) -> Cons (x, append a b)
+    ;;
+  end
+
   let to_seq t =
     let open Seq in
     let rec trie = function

@@ -6,10 +6,7 @@
 (library
  (name test)
  (modules test)
- (libraries pvec)
- (inline_tests)
- (preprocess
-  (pps ppx_expect)))
+ (libraries pvec))
 
 (executable
  (name benchmark)
