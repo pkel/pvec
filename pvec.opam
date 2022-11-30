@@ -9,6 +9,7 @@ homepage: "https://github.com/pkel/pvec"
 bug-reports: "https://github.com/pkel/pvec/issues"
 depends: [
   "dune" {>= "3.0"}
+  "ocaml" {>= "4.08.1"}
   "mtime" {with-test}
   "ppx_expect" {with-test}
   "odoc" {with-doc}

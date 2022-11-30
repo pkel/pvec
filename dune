@@ -11,14 +11,9 @@
  (preprocess
   (pps ppx_expect)))
 
-(executable
+(test
  (name benchmark)
- (public_name benchmark)
- (package _dev)
  (modules benchmark)
- (libraries mtime.clock.os pvec))
-
-(rule
- (alias runtest)
+ (libraries mtime.clock.os pvec)
  (action
   (run ./benchmark.exe)))
