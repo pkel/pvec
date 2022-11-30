@@ -3,7 +3,7 @@ opam-version: "2.0"
 synopsis: "Dev tools"
 maintainer: ["patrik@pkel.dev"]
 authors: ["Patrik Keller"]
-license: "none"
+license: "ISC"
 homepage: "https://github.com/pkel/pvec"
 bug-reports: "https://github.com/pkel/pvec/issues"
 depends: [

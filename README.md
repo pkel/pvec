@@ -38,6 +38,6 @@ This library is distributed under the ISC license. See
 - [x] provide a couple of convenience functions (fold, map)
 - [x] write intro to `pvec.mli` and readme
 - [x] pick license
-- [ ] release
+- [x] release
 - [ ] more benchmarks
 - [ ] slice/range support for seq, copy, map & fold
