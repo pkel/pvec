@@ -12,7 +12,7 @@
 (package
   (name pvec)
   (synopsis "Persistent vectors")
-  (version 0.1.0)
+  (version 0.1.1)
   (depends
     (ocaml (>= 4.08.1))
     (mtime :with-test)
