@@ -1,10 +1,50 @@
-(** Persistent vectors.
-    Bitmapped trie + tail optimization.
-    Branching factor 32. *)
+(** Persistent vectors based on bitwise tries. *)
+
+(** This module implements vectors that
+    - store [n] elements with keys ranging from [0] to [n-1] like [array],
+    - support efficient random read and write access (almost) like [array],
+    - are persistent (= immutable) like [list] or [Map.t], and
+    - and grow dynamically like [list] or [Map.t].
+
+    The implementation is based on bitwise tries. Roughly speaking, vector
+    elements are stored in the leaves of a balanced tree and the bitwise
+    representation of an element's index defines the path to the element in the
+    tree. The trie uses a default branching factor of 32 (you can configure
+    something else, see {!label-custom}). Thus a vector with n elements implies
+    trie-depth log{_32}(n). This makes lookups and modifications quasi constant
+    time. To further speed up (series of) appends, [Pvec.t] batches appended
+    elements into groups of 32 before descending into the tree.
+
+    If you want to know more, I recommend reading {{:
+    https://hypirion.com/musings/understanding-persistent-vector-pt-1}
+    hyPiRion's series of blog posts about this data-type}. It was my main
+    source during implementation. Another source was the {{:
+    https://github.com/clojure/clojure/blob/master/src/jvm/clojure/lang/PersistentVector.java}
+    Java-implementation of Clojure's persistent vectors}.
+
+    {b Disclaimer}
+
+    I'm solo programming for fun and research. Nobody reviewed my code. My {{:
+    https://github.com/pkel/pvec/blob/main/test.ml} tests} should cover most
+    parts, but bugs might still be lurking. I think my persistent vectors will
+    be useful for others, but I recommend reviewing the code before putting any
+    stake on it. Luckily, it's only a few lines of code. If you review the
+    code, please consider providing feedback.
+
+    {b Related OCaml stuff}
+
+    - The {{: https://opam.ocaml.org/packages/vector/} vector} library provides dynamically growing and mutable arrays.
+    - The {{: https://opam.ocaml.org/packages/vec/} vec} library provides dynamically growing, mutable, and permission controlled arrays.
+    - The {{: https://c-cube.github.io/ocaml-containers/last/containers-data/CCFun_vec/index.html } containers} library provides (among many others) a persistent vector similar to [pvec]. It's marked {i «experimental. DO NOT USE (yet)» }.
+*)
 
 (**/**) (* hide module T *)
 
 module type T = sig
+  (** Persistent vectors with custom branching factor. *)
+
+  (** {1 Basics} *)
+
   (** Persistent vectors with elements of type ['a]. *)
   type 'a t
 
@@ -109,7 +149,7 @@ end
 
 include T (* odoc inlines the documentation of module T here *)
 
-(** {1 Custom vectors}
+(** {1:custom Custom vectors}
 
     The default vector {!t} uses branching factor 32. You may create vectors
     with custom branching factors. After doing
@@ -119,7 +159,7 @@ module V = Pvec.Make (struct
 end)
     ]}
     module [V] has the same interface as {!Pvec} but its vectors use branching
-    factor 2ⁿ.
+    factor 2{^ n}.
 *)
 
 module Make (_ : sig
