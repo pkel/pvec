@@ -10,10 +10,10 @@
     elements are stored in the leaves of a balanced tree and the bitwise
     representation of an element's index defines the path to the element in the
     tree. The trie uses a default branching factor of 32 (you can configure
-    something else, see {!label-custom}). Thus a vector with n elements implies
-    trie-depth log{_32}(n). This makes lookups and modifications quasi constant
-    time. To further speed up (series of) appends, [Pvec.t] batches appended
-    elements into groups of 32 before descending into the tree.
+    something else, see {!section-custom}). Thus a vector with n elements
+    implies trie-depth log{_32}(n). This makes lookups and modifications quasi
+    constant time. To further speed up (series of) appends, [Pvec.t] batches
+    appended elements into groups of 32 before descending into the tree.
 
     If you want to know more, I recommend reading {{:
     https://hypirion.com/musings/understanding-persistent-vector-pt-1}
