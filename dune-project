@@ -15,7 +15,7 @@
   (version 0.1.1)
   (depends
     (ocaml (>= 4.08.1))
-    (mtime :with-test)
+    (mtime (and :with-test (< 2)))
     (ppx_expect :with-test)
     ))
 
